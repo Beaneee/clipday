@@ -1,9 +1,13 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { useClipStore } from "@/store/clip.store";
 
-const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+// 월요일 시작
+const DAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const CELL_WIDTH = SCREEN_WIDTH / 7;
+const CELL_HEIGHT = 80;
 
 type Props = {
   onDayPress: (dateKey: string) => void;
@@ -11,6 +15,7 @@ type Props = {
 
 export function CalendarView({ onDayPress }: Props) {
   const clips = useClipStore((s) => s.clips);
+
   const [cursor, setCursor] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -18,86 +23,102 @@ export function CalendarView({ onDayPress }: Props) {
 
   const { year, month } = cursor;
 
-  const days = useMemo(() => {
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    return { firstDay, daysInMonth };
-  }, [year, month]);
-
   const today = useMemo(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }, []);
 
+  // 월요일 시작 기준 firstDay 계산 (0=월 ... 6=일)
+  const cells = useMemo(() => {
+    const firstDow = new Date(year, month, 1).getDay(); // 0=일
+    const offset = (firstDow + 6) % 7; // 월요일 기준 offset
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const arr: (number | null)[] = [
+      ...Array(offset).fill(null),
+      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ];
+    while (arr.length % 7 !== 0) arr.push(null);
+    return arr;
+  }, [year, month]);
+
   const toKey = (day: number) =>
     `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-  const prev = () =>
-    setCursor(({ year, month }) =>
-      month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 }
-    );
-
-  const next = () =>
-    setCursor(({ year, month }) =>
-      month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 }
-    );
-
-  const cells: (number | null)[] = [
-    ...Array(days.firstDay).fill(null),
-    ...Array.from({ length: days.daysInMonth }, (_, i) => i + 1),
-  ];
-
-  // pad to complete last row
-  while (cells.length % 7 !== 0) cells.push(null);
+  const monthLabel = `${year}년 ${month + 1}월`;
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={prev} hitSlop={12}>
-          <Ionicons name="chevron-back" size={22} color="#000" />
-        </Pressable>
-        <Text style={styles.title}>
-          {year}년 {month + 1}월
-        </Text>
-        <Pressable onPress={next} hitSlop={12}>
-          <Ionicons name="chevron-forward" size={22} color="#000" />
-        </Pressable>
+      {/* Month header */}
+      <Pressable
+        onPress={() =>
+          setCursor(({ year, month }) =>
+            month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 }
+          )
+        }
+        style={styles.headerSide}
+      />
+      <View style={styles.headerWrap}>
+        <Pressable
+          onPress={() =>
+            setCursor(({ year, month }) =>
+              month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 }
+            )
+          }
+          hitSlop={16}
+        />
+        <Text style={styles.monthTitle}>{monthLabel}</Text>
+        <Pressable
+          onPress={() =>
+            setCursor(({ year, month }) =>
+              month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 }
+            )
+          }
+          hitSlop={16}
+        />
       </View>
 
       {/* Day labels */}
       <View style={styles.row}>
         {DAY_LABELS.map((d) => (
-          <Text key={d} style={[styles.label, d === "일" && styles.sun, d === "토" && styles.sat]}>
-            {d}
-          </Text>
+          <View key={d} style={styles.labelCell}>
+            <Text style={styles.labelText}>{d}</Text>
+          </View>
         ))}
       </View>
+
+      {/* Divider */}
+      <View style={styles.divider} />
 
       {/* Grid */}
       {Array.from({ length: cells.length / 7 }, (_, row) => (
         <View key={row} style={styles.row}>
           {cells.slice(row * 7, row * 7 + 7).map((day, col) => {
-            if (!day) return <View key={col} style={styles.cell} />;
+            if (!day)
+              return (
+                <View key={col} style={[styles.cell, col < 6 && styles.cellBorderRight]} />
+              );
+
             const key = toKey(day);
-            const hasClip = (clips[key]?.length ?? 0) > 0;
             const isToday = key === today;
-            const isSun = col === 0;
-            const isSat = col === 6;
+            const hasClip = (clips[key]?.length ?? 0) > 0;
+            const isSun = col === 6;
 
             return (
               <Pressable
                 key={col}
-                style={styles.cell}
+                style={({ pressed }) => [
+                  styles.cell,
+                  col < 6 && styles.cellBorderRight,
+                  pressed && styles.cellPressed,
+                ]}
                 onPress={() => onDayPress(key)}
               >
                 <View style={[styles.dayCircle, isToday && styles.todayCircle]}>
                   <Text
                     style={[
                       styles.dayText,
-                      isSun && styles.sun,
-                      isSat && styles.sat,
-                      isToday && styles.todayText,
+                      isSun && styles.sundayText,
+                      isToday && styles.todayDayText,
                     ]}
                   >
                     {day}
@@ -114,40 +135,66 @@ export function CalendarView({ onDayPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: "#fff", paddingHorizontal: 16, paddingBottom: 8 },
-  header: {
-    flexDirection: "row",
+  container: { backgroundColor: "#fff" },
+
+  headerWrap: {
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
+    justifyContent: "center",
+    paddingVertical: 20,
   },
-  title: { fontSize: 18, fontWeight: "600" },
+  headerSide: { position: "absolute" },
+  monthTitle: {
+    fontSize: 17,
+    fontWeight: "400",
+    color: "#555",
+    letterSpacing: 0.3,
+  },
+
   row: { flexDirection: "row" },
-  label: {
-    flex: 1,
-    textAlign: "center",
-    fontSize: 12,
-    color: "#999",
-    paddingVertical: 6,
+
+  labelCell: {
+    width: CELL_WIDTH,
+    alignItems: "center",
+    paddingVertical: 8,
   },
-  cell: { flex: 1, alignItems: "center", paddingVertical: 4 },
+  labelText: { fontSize: 13, color: "#aaa" },
+
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: "#e0e0e0" },
+
+  cell: {
+    width: CELL_WIDTH,
+    height: CELL_HEIGHT,
+    alignItems: "center",
+    paddingTop: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#e0e0e0",
+  },
+  cellBorderRight: {
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: "#e0e0e0",
+  },
+  cellPressed: { backgroundColor: "#f5f5f5" },
+
   dayCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
   },
-  todayCircle: { backgroundColor: "#000" },
-  dayText: { fontSize: 14, color: "#1a1a1a" },
-  todayText: { color: "#fff", fontWeight: "600" },
-  sun: { color: "#e74c3c" },
-  sat: { color: "#3498db" },
+  todayCircle: {
+    borderWidth: 1.5,
+    borderColor: "#222",
+  },
+  dayText: { fontSize: 14, color: "#222" },
+  sundayText: { color: "#e74c3c" },
+  todayDayText: { fontWeight: "600" },
+
   dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "#000",
-    marginTop: 2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#555",
+    marginTop: 4,
   },
 });
