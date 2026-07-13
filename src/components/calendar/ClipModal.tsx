@@ -24,8 +24,9 @@ type Props = {
 
 export function ClipModal({ dateKey, onClose }: Props) {
   const addClip = useClipStore((s) => s.addClip);
+  const removeClip = useClipStore((s) => s.removeClip);
   const clipsMap = useClipStore((s) => s.clips);
-  const clips = dateKey ? (clipsMap[dateKey] ?? []) : [];
+  const existing = dateKey ? (clipsMap[dateKey]?.[0] ?? null) : null;
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
@@ -35,7 +36,7 @@ export function ClipModal({ dateKey, onClose }: Props) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
-      quality: 0.8,
+      quality: 0.9,
     });
     if (!result.canceled) setPhotoUri(result.assets[0].uri);
   }, []);
@@ -43,6 +44,10 @@ export function ClipModal({ dateKey, onClose }: Props) {
   const handleSave = useCallback(async () => {
     if (!dateKey || !photoUri) return;
     setSaving(true);
+
+    // 기존 클립 교체
+    if (existing) removeClip(dateKey, existing.id);
+
     const clip: Clip = {
       id: `${dateKey}-${Date.now()}`,
       dateKey,
@@ -54,12 +59,32 @@ export function ClipModal({ dateKey, onClose }: Props) {
     setPhotoUri(null);
     setMemo("");
     setSaving(false);
-  }, [dateKey, photoUri, memo, addClip]);
+    onClose();
+  }, [dateKey, photoUri, memo, addClip, removeClip, existing, onClose]);
+
+  const handleDelete = useCallback(() => {
+    if (!dateKey || !existing) return;
+    removeClip(dateKey, existing.id);
+    onClose();
+  }, [dateKey, existing, removeClip, onClose]);
+
+  // 모달 열릴 때 기존 데이터 세팅
+  const onShow = useCallback(() => {
+    if (existing) {
+      setPhotoUri(existing.photoUri);
+      setMemo(existing.memo);
+    } else {
+      setPhotoUri(null);
+      setMemo("");
+    }
+  }, [existing]);
 
   const formatDate = (key: string) => {
     const [y, m, d] = key.split("-");
     return `${y}년 ${Number(m)}월 ${Number(d)}일`;
   };
+
+  const displayUri = photoUri;
 
   return (
     <Modal
@@ -67,101 +92,91 @@ export function ClipModal({ dateKey, onClose }: Props) {
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      onShow={onShow}
     >
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Handle bar */}
         <View style={styles.handleBar} />
 
-        {/* Header */}
+        {/* 헤더 */}
         <View style={styles.header}>
           <Text style={styles.dateText}>{dateKey ? formatDate(dateKey) : ""}</Text>
-          <Pressable onPress={onClose} hitSlop={12}>
-            <Ionicons name="close" size={24} color="#000" />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {existing && (
+              <Pressable onPress={handleDelete} hitSlop={12} style={styles.deleteBtn}>
+                <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+              </Pressable>
+            )}
+            <Pressable onPress={onClose} hitSlop={12}>
+              <Ionicons name="close" size={24} color="#111" />
+            </Pressable>
+          </View>
         </View>
 
-        <ScrollView style={styles.flex} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          {/* Photo picker */}
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* 사진 영역 */}
           <Pressable style={styles.photoPicker} onPress={pickImage}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.preview} contentFit="cover" />
+            {displayUri ? (
+              <>
+                <Image source={{ uri: displayUri }} style={styles.preview} contentFit="cover" />
+                <View style={styles.changeOverlay}>
+                  <Ionicons name="camera-outline" size={22} color="#fff" />
+                  <Text style={styles.changeText}>사진 변경</Text>
+                </View>
+              </>
             ) : (
               <View style={styles.placeholder}>
-                <Ionicons name="image-outline" size={40} color="#bbb" />
-                <Text style={styles.placeholderText}>사진 추가</Text>
+                <Ionicons name="image-outline" size={48} color="#ccc" />
+                <Text style={styles.placeholderText}>사진을 추가해주세요</Text>
               </View>
             )}
           </Pressable>
 
-          {/* Memo */}
+          {/* 메모 */}
           <TextInput
             style={styles.memoInput}
-            placeholder="오늘의 메모를 입력하세요..."
+            placeholder="오늘 하루를 기록해보세요..."
             placeholderTextColor="#bbb"
             multiline
             value={memo}
             onChangeText={setMemo}
           />
 
-          {/* Save button */}
+          {/* 저장 버튼 */}
           <Pressable
             style={[styles.saveButton, (!photoUri || saving) && styles.saveButtonDisabled]}
             onPress={handleSave}
             disabled={!photoUri || saving}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.saveButtonText}>저장</Text>
+              <Text style={styles.saveButtonText}>
+                {existing ? "수정 완료" : "저장"}
+              </Text>
             )}
           </Pressable>
-
-          {/* Existing clips */}
-          {clips.length > 0 && (
-            <View style={styles.existingSection}>
-              <Text style={styles.existingTitle}>이 날의 클립 ({clips.length})</Text>
-              {clips.map((clip) => (
-                <ClipItem key={clip.id} clip={clip} />
-              ))}
-            </View>
-          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
-function ClipItem({ clip }: { clip: Clip }) {
-  const removeClip = useClipStore((s) => s.removeClip);
-
-  return (
-    <View style={styles.clipItem}>
-      <Image source={{ uri: clip.photoUri }} style={styles.clipThumb} contentFit="cover" />
-      <View style={styles.clipMeta}>
-        <Text style={styles.clipMemo} numberOfLines={2}>
-          {clip.memo || "메모 없음"}
-        </Text>
-      </View>
-      <Pressable onPress={() => removeClip(clip.dateKey, clip.id)} hitSlop={8}>
-        <Ionicons name="trash-outline" size={18} color="#ccc" />
-      </Pressable>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: "#fff" },
   handleBar: {
-    width: 40,
+    width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#ddd",
     alignSelf: "center",
     marginTop: 12,
-    marginBottom: 4,
   },
   header: {
     flexDirection: "row",
@@ -172,48 +187,56 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#eee",
   },
-  dateText: { fontSize: 17, fontWeight: "600" },
-  body: { padding: 20, paddingBottom: 40 },
+  dateText: { fontSize: 17, fontWeight: "600", color: "#111" },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
+  deleteBtn: { padding: 2 },
+
+  body: { padding: 20, paddingBottom: 48 },
+
   photoPicker: {
     width: "100%",
-    height: 220,
-    borderRadius: 12,
+    height: 260,
+    borderRadius: 14,
     overflow: "hidden",
     backgroundColor: "#f5f5f5",
     marginBottom: 16,
   },
   preview: { width: "100%", height: "100%" },
-  placeholder: { flex: 1, alignItems: "center", justifyContent: "center", gap: 8 },
+  changeOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  changeText: { color: "#fff", fontSize: 13, fontWeight: "500" },
+  placeholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
   placeholderText: { color: "#bbb", fontSize: 14 },
+
   memoInput: {
     borderWidth: 1,
     borderColor: "#eee",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 15,
-    minHeight: 100,
-    textAlignVertical: "top",
-    marginBottom: 16,
-    color: "#1a1a1a",
-  },
-  saveButton: {
-    backgroundColor: "#000",
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 14,
-    alignItems: "center",
-    marginBottom: 28,
+    fontSize: 15,
+    minHeight: 110,
+    textAlignVertical: "top",
+    marginBottom: 20,
+    color: "#111",
+    lineHeight: 22,
   },
-  saveButtonDisabled: { backgroundColor: "#ccc" },
+
+  saveButton: {
+    backgroundColor: "#111",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+  },
+  saveButtonDisabled: { backgroundColor: "#ddd" },
   saveButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  existingSection: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#eee", paddingTop: 20 },
-  existingTitle: { fontSize: 14, fontWeight: "600", color: "#666", marginBottom: 12 },
-  clipItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 12,
-  },
-  clipThumb: { width: 56, height: 56, borderRadius: 8 },
-  clipMeta: { flex: 1 },
-  clipMemo: { fontSize: 14, color: "#333" },
 });
