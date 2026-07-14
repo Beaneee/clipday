@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { ClipModal } from "@/components/calendar/ClipModal";
+import { TabBar } from "@/components/calendar/TabBar";
 
 export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -12,6 +13,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TabBar />
       <ScrollView bounces={false}>
         <CalendarView onDayPress={handleDayPress} />
       </ScrollView>

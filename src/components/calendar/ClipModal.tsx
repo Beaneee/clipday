@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { useClipStore } from "@/store/clip.store";
+import { useTabStore } from "@/store/tab.store";
 import type { Clip } from "@/types/clip";
 
 type Props = {
@@ -23,10 +24,13 @@ type Props = {
 };
 
 export function ClipModal({ dateKey, onClose }: Props) {
+  const activeTabId = useTabStore((s) => s.activeTabId);
   const addClip = useClipStore((s) => s.addClip);
   const removeClip = useClipStore((s) => s.removeClip);
   const clipsMap = useClipStore((s) => s.clips);
-  const existing = dateKey ? (clipsMap[dateKey]?.[0] ?? null) : null;
+  const existing = dateKey
+    ? (clipsMap[activeTabId]?.[dateKey]?.[0] ?? null)
+    : null;
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
@@ -46,7 +50,7 @@ export function ClipModal({ dateKey, onClose }: Props) {
     setSaving(true);
 
     // 기존 클립 교체
-    if (existing) removeClip(dateKey, existing.id);
+    if (existing) removeClip(activeTabId, dateKey, existing.id);
 
     const clip: Clip = {
       id: `${dateKey}-${Date.now()}`,
@@ -55,18 +59,18 @@ export function ClipModal({ dateKey, onClose }: Props) {
       memo,
       createdAt: new Date().toISOString(),
     };
-    addClip(clip);
+    addClip(activeTabId, clip);
     setPhotoUri(null);
     setMemo("");
     setSaving(false);
     onClose();
-  }, [dateKey, photoUri, memo, addClip, removeClip, existing, onClose]);
+  }, [dateKey, photoUri, memo, addClip, removeClip, existing, activeTabId, onClose]);
 
   const handleDelete = useCallback(() => {
     if (!dateKey || !existing) return;
-    removeClip(dateKey, existing.id);
+    removeClip(activeTabId, dateKey, existing.id);
     onClose();
-  }, [dateKey, existing, removeClip, onClose]);
+  }, [dateKey, existing, removeClip, activeTabId, onClose]);
 
   // 모달 열릴 때 기존 데이터 세팅
   const onShow = useCallback(() => {

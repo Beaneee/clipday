@@ -4,6 +4,7 @@ import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Calendar, LocaleConfig, type DateData } from "react-native-calendars";
 import { useClipStore } from "@/store/clip.store";
 import { useHolidayStore } from "@/store/holiday.store";
+import { useTabStore } from "@/store/tab.store";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CELL_SIZE = SCREEN_WIDTH / 7;
@@ -38,7 +39,10 @@ type DayProps = {
 const DayCell = memo(function DayCell({ date, state, onDayPress }: DayProps) {
   const key = date?.dateString;
   const year = key ? Number(key.slice(0, 4)) : undefined;
-  const clip = useClipStore((s) => (key ? s.clips[key]?.[0] : undefined));
+  const activeTabId = useTabStore((s) => s.activeTabId);
+  const clip = useClipStore((s) =>
+    key ? s.clips[activeTabId]?.[key]?.[0] : undefined
+  );
   const holidayName = useHolidayStore((s) =>
     key && year ? s.byYear[year]?.[key] : undefined
   );
