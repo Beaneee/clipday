@@ -58,7 +58,15 @@ export function ClipModal({ dateKey, onClose }: Props) {
       allowsEditing: true,
       quality: 0.9,
     });
-    if (!result.canceled) setPhoto({ kind: "local", uri: result.assets[0].uri });
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setPhoto({
+        kind: "local",
+        uri: asset.uri,
+        mimeType: asset.mimeType,
+        fileName: asset.fileName,
+      });
+    }
   }, []);
 
   const handleSave = useCallback(() => {

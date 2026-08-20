@@ -19,7 +19,14 @@ export const recordKeys = {
 /** 저장할 사진의 상태. 서버에 이미 있는 것과 방금 고른 로컬 파일을 구분한다. */
 export type PhotoSelection =
   | { kind: "server"; imageUrl: string } // 서버 상대 경로 ("/images/...")
-  | { kind: "local"; uri: string } // 아직 업로드하지 않은 로컬 uri
+  | {
+      // 아직 업로드하지 않은 로컬 파일. picker가 알려준 형식·파일명을 함께
+      // 들고 다닌다. 네이티브 업로드는 확장자 추측보다 이 값이 정확하다.
+      kind: "local";
+      uri: string;
+      mimeType?: string | null;
+      fileName?: string | null;
+    }
   | null;
 
 /**
@@ -54,7 +61,10 @@ export function useRecordsByDate(tabId: string) {
 async function resolveImageUrl(photo: PhotoSelection): Promise<string | null> {
   if (!photo) return null;
   if (photo.kind === "server") return photo.imageUrl;
-  return uploadImage(photo.uri);
+  return uploadImage(photo.uri, {
+    mimeType: photo.mimeType,
+    fileName: photo.fileName,
+  });
 }
 
 type SaveInput = {

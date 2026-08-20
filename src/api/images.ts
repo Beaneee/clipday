@@ -116,24 +116,39 @@ async function shrinkForUpload(blob: Blob): Promise<Blob> {
   return blob;
 }
 
+type UploadMeta = {
+  /** picker가 알려준 MIME. 확장자 추측보다 정확하다. */
+  mimeType?: string | null;
+  /** picker가 알려준 원본 파일명. */
+  fileName?: string | null;
+};
+
 /**
  * 로컬 이미지 uri를 서버에 업로드하고 서버 경로("/images/xxx.png")를 돌려준다.
  * 웹에서는 Blob으로, 네이티브에서는 RN FormData 파일 객체로 보낸다.
  */
-export async function uploadImage(localUri: string): Promise<string> {
+export async function uploadImage(
+  localUri: string,
+  meta: UploadMeta = {}
+): Promise<string> {
   const formData = new FormData();
 
   if (Platform.OS === "web") {
     // 웹의 picker는 blob:/data: uri를 준다. 실제 바이트를 읽어 Blob으로 올린다.
     const original = await (await fetch(localUri)).blob();
     const blob = await shrinkForUpload(original);
-    const mimeType = blob.type || guessMimeType(localUri);
-    formData.append("file", blob, guessFileName(localUri, mimeType));
+    const mimeType = blob.type || meta.mimeType || guessMimeType(localUri);
+    formData.append("file", blob, meta.fileName ?? guessFileName(localUri, mimeType));
   } else {
-    const mimeType = guessMimeType(localUri);
+    // 서버는 image/* 만 받으므로, picker가 알려준 값이 이미지가 아니면
+    // (또는 없으면) 확장자로 추론한 값을 쓴다.
+    const reported = meta.mimeType?.trim();
+    const mimeType =
+      reported && reported.startsWith("image/") ? reported : guessMimeType(localUri);
+
     formData.append("file", {
       uri: localUri,
-      name: guessFileName(localUri, mimeType),
+      name: meta.fileName ?? guessFileName(localUri, mimeType),
       type: mimeType,
     } as unknown as Blob);
   }

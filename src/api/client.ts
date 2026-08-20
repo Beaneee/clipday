@@ -96,10 +96,14 @@ export async function apiRequest<T>(
     });
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
+    // 원인을 메시지에 함께 싣는다. fetch 실패는 Error를 stringify해도 {}만
+    // 나와서, 이게 없으면 화면에서 원인을 전혀 알 수 없다.
+    const detail =
+      e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     throw new NetworkError(
       aborted
-        ? `요청이 ${timeoutMs}ms 안에 끝나지 않았습니다. (${path})`
-        : `서버에 연결할 수 없습니다. API 주소를 확인해주세요. (${API_BASE_URL})`,
+        ? `요청이 ${timeoutMs}ms 안에 끝나지 않았습니다. (${method} ${path})`
+        : `서버에 연결할 수 없습니다. (${method} ${API_BASE_URL}${path}) — ${detail}`,
       e
     );
   } finally {
