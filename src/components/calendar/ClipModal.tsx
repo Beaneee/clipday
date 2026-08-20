@@ -14,71 +14,90 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useClipStore } from "@/store/clip.store";
+import { toAbsoluteImageUrl } from "@/api/client";
+import {
+  useDeleteRecord,
+  useRecordsByDate,
+  useSaveRecord,
+  type PhotoSelection,
+} from "@/hooks/useRecords";
 import { useTabStore } from "@/store/tab.store";
-import type { Clip } from "@/types/clip";
 
 type Props = {
   dateKey: string | null;
   onClose: () => void;
 };
 
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return "알 수 없는 오류가 발생했습니다.";
+}
+
 export function ClipModal({ dateKey, onClose }: Props) {
   const activeTabId = useTabStore((s) => s.activeTabId);
-  const addClip = useClipStore((s) => s.addClip);
-  const removeClip = useClipStore((s) => s.removeClip);
-  const clipsMap = useClipStore((s) => s.clips);
-  const existing = dateKey
-    ? (clipsMap[activeTabId]?.[dateKey]?.[0] ?? null)
-    : null;
+  const { byDate } = useRecordsByDate(activeTabId);
+  const existing = dateKey ? (byDate[dateKey] ?? null) : null;
 
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const saveMutation = useSaveRecord(activeTabId);
+  const deleteMutation = useDeleteRecord(activeTabId);
+
+  const [photo, setPhoto] = useState<PhotoSelection>(null);
   const [memo, setMemo] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const busy = saveMutation.isPending || deleteMutation.isPending;
+  const displayUri =
+    photo?.kind === "server"
+      ? toAbsoluteImageUrl(photo.imageUrl)
+      : (photo?.uri ?? null);
 
   const pickImage = useCallback(async () => {
+    setError(null);
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
       quality: 0.9,
     });
-    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+    if (!result.canceled) setPhoto({ kind: "local", uri: result.assets[0].uri });
   }, []);
 
-  const handleSave = useCallback(async () => {
-    if (!dateKey || !photoUri) return;
-    setSaving(true);
-
-    // 기존 클립 교체
-    if (existing) removeClip(activeTabId, dateKey, existing.id);
-
-    const clip: Clip = {
-      id: `${dateKey}-${Date.now()}`,
-      dateKey,
-      photoUri,
-      memo,
-      createdAt: new Date().toISOString(),
-    };
-    addClip(activeTabId, clip);
-    setPhotoUri(null);
-    setMemo("");
-    setSaving(false);
-    onClose();
-  }, [dateKey, photoUri, memo, addClip, removeClip, existing, activeTabId, onClose]);
+  const handleSave = useCallback(() => {
+    if (!dateKey || !photo) return;
+    setError(null);
+    saveMutation.mutate(
+      { dateKey, memo, photo, existing },
+      {
+        onSuccess: () => {
+          setPhoto(null);
+          setMemo("");
+          onClose();
+        },
+        onError: (e) => setError(errorMessage(e)),
+      }
+    );
+  }, [dateKey, photo, memo, existing, saveMutation, onClose]);
 
   const handleDelete = useCallback(() => {
-    if (!dateKey || !existing) return;
-    removeClip(activeTabId, dateKey, existing.id);
-    onClose();
-  }, [dateKey, existing, removeClip, activeTabId, onClose]);
+    if (!existing) return;
+    setError(null);
+    deleteMutation.mutate(existing.id, {
+      onSuccess: () => {
+        setPhoto(null);
+        setMemo("");
+        onClose();
+      },
+      onError: (e) => setError(errorMessage(e)),
+    });
+  }, [existing, deleteMutation, onClose]);
 
-  // 모달 열릴 때 기존 데이터 세팅
+  // 모달이 열릴 때 서버에 있는 기존 기록을 입력값으로 채운다.
   const onShow = useCallback(() => {
+    setError(null);
     if (existing) {
-      setPhotoUri(existing.photoUri);
-      setMemo(existing.memo);
+      setPhoto(existing.imageUrl ? { kind: "server", imageUrl: existing.imageUrl } : null);
+      setMemo(existing.memo ?? "");
     } else {
-      setPhotoUri(null);
+      setPhoto(null);
       setMemo("");
     }
   }, [existing]);
@@ -87,8 +106,6 @@ export function ClipModal({ dateKey, onClose }: Props) {
     const [y, m, d] = key.split("-");
     return `${y}년 ${Number(m)}월 ${Number(d)}일`;
   };
-
-  const displayUri = photoUri;
 
   return (
     <Modal
@@ -109,11 +126,16 @@ export function ClipModal({ dateKey, onClose }: Props) {
           <Text style={styles.dateText}>{dateKey ? formatDate(dateKey) : ""}</Text>
           <View style={styles.headerActions}>
             {existing && (
-              <Pressable onPress={handleDelete} hitSlop={12} style={styles.deleteBtn}>
-                <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+              <Pressable
+                onPress={handleDelete}
+                hitSlop={12}
+                style={styles.deleteBtn}
+                disabled={busy}
+              >
+                <Ionicons name="trash-outline" size={20} color={busy ? "#f0b8b2" : "#e74c3c"} />
               </Pressable>
             )}
-            <Pressable onPress={onClose} hitSlop={12}>
+            <Pressable onPress={onClose} hitSlop={12} disabled={busy}>
               <Ionicons name="close" size={24} color="#111" />
             </Pressable>
           </View>
@@ -125,7 +147,7 @@ export function ClipModal({ dateKey, onClose }: Props) {
           keyboardShouldPersistTaps="handled"
         >
           {/* 사진 영역 */}
-          <Pressable style={styles.photoPicker} onPress={pickImage}>
+          <Pressable style={styles.photoPicker} onPress={pickImage} disabled={busy}>
             {displayUri ? (
               <>
                 <Image source={{ uri: displayUri }} style={styles.preview} contentFit="cover" />
@@ -150,20 +172,27 @@ export function ClipModal({ dateKey, onClose }: Props) {
             multiline
             value={memo}
             onChangeText={setMemo}
+            editable={!busy}
           />
+
+          {/* 에러 안내 */}
+          {error && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={16} color="#e74c3c" />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
           {/* 저장 버튼 */}
           <Pressable
-            style={[styles.saveButton, (!photoUri || saving) && styles.saveButtonDisabled]}
+            style={[styles.saveButton, (!photo || busy) && styles.saveButtonDisabled]}
             onPress={handleSave}
-            disabled={!photoUri || saving}
+            disabled={!photo || busy}
           >
-            {saving ? (
+            {saveMutation.isPending ? (
               <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.saveButtonText}>
-                {existing ? "수정 완료" : "저장"}
-              </Text>
+              <Text style={styles.saveButtonText}>{existing ? "수정 완료" : "저장"}</Text>
             )}
           </Pressable>
         </ScrollView>
@@ -234,6 +263,17 @@ const styles = StyleSheet.create({
     color: "#111",
     lineHeight: 22,
   },
+
+  errorBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fdecea",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: { color: "#c0392b", fontSize: 13, flex: 1 },
 
   saveButton: {
     backgroundColor: "#111",
