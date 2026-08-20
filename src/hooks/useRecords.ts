@@ -9,7 +9,6 @@ import {
   listRecords,
   updateRecord,
 } from "@/api/records";
-import { useTabStore } from "@/store/tab.store";
 import type { DailyRecord } from "@/types/record";
 
 export const recordKeys = {
@@ -25,16 +24,16 @@ export type PhotoSelection =
 
 /**
  * 해당 탭의 기록 목록.
- * 저장된 탭 목록을 읽기 전에는 조회하지 않는다. 복원 전 기본 탭으로
- * 한 번 요청했다가 곧바로 다시 요청하는 낭비를 막기 위해서다.
+ *
+ * 저장된 탭을 다 읽을 때까지 기다렸다 조회하지 않는다. 기다리게 하면
+ * 저장소를 못 읽는 환경(시크릿 모드, 저장소 차단 등)에서 요청이 아예
+ * 나가지 않아 화면이 로딩에서 멈춘다. 복원 전 기본 탭으로 한 번 더
+ * 요청이 나가는 편이 낫다.
  */
 export function useRecords(tabId: string) {
-  const hasHydrated = useTabStore((s) => s.hasHydrated);
-
   return useQuery({
     queryKey: recordKeys.byTab(tabId),
     queryFn: () => listRecords(tabId),
-    enabled: hasHydrated,
   });
 }
 

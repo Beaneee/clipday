@@ -8,8 +8,6 @@ const DEFAULT_TAB: Tab = { id: "default", name: "일상" };
 type TabState = {
   tabs: Tab[];
   activeTabId: string;
-  /** 저장된 탭 목록을 다 읽어왔는지. 읽기 전에는 서버 조회를 미룬다. */
-  hasHydrated: boolean;
   addTab: (name: string) => void; // 생성 후 해당 탭을 활성화
   setActiveTab: (id: string) => void;
   renameTab: (id: string, name: string) => void;
@@ -25,7 +23,6 @@ export const useTabStore = create<TabState>()(
     (set) => ({
       tabs: [DEFAULT_TAB],
       activeTabId: DEFAULT_TAB.id,
-      hasHydrated: false,
 
       addTab: (name) =>
         set((s) => {
@@ -52,14 +49,14 @@ export const useTabStore = create<TabState>()(
       name: "clipday.tabs",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({ tabs: s.tabs, activeTabId: s.activeTabId }),
-      onRehydrateStorage: () => (state) => {
-        if (!state) return;
-        // 저장된 값이 깨져 있어도 앱이 뜨도록 방어한다.
-        if (!state.tabs?.length) state.tabs = [DEFAULT_TAB];
-        if (!state.tabs.some((t) => t.id === state.activeTabId)) {
-          state.activeTabId = state.tabs[0].id;
-        }
-        state.hasHydrated = true;
+      // 저장된 값이 깨져 있어도 앱이 뜨도록 복원 결과를 손본다.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<TabState>;
+        const tabs = saved.tabs?.length ? saved.tabs : current.tabs;
+        const activeTabId = tabs.some((t) => t.id === saved.activeTabId)
+          ? (saved.activeTabId as string)
+          : tabs[0].id;
+        return { ...current, tabs, activeTabId };
       },
     }
   )

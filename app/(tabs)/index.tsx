@@ -11,7 +11,9 @@ import { useTabStore } from "@/store/tab.store";
 export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const activeTabId = useTabStore((s) => s.activeTabId);
-  const { isPending, isError, error, refetch, isFetching } = useRecords(activeTabId);
+  // isPending이 아니라 isLoading을 쓴다. isPending은 요청이 실제로 나가지
+  // 않는 상태에서도 참이라, 그 경우 스피너가 영원히 돈다.
+  const { isLoading, isError, error, refetch, isFetching } = useRecords(activeTabId);
 
   const handleDayPress = useCallback((key: string) => setSelectedDate(key), []);
   const handleClose = useCallback(() => setSelectedDate(null), []);
@@ -37,7 +39,7 @@ export default function HomeScreen() {
         <CalendarView onDayPress={handleDayPress} />
       </ScrollView>
 
-      {isPending && (
+      {isLoading && (
         <View style={styles.loadingOverlay} pointerEvents="none">
           <ActivityIndicator size="small" color="#111" />
         </View>
