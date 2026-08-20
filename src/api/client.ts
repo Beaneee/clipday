@@ -3,7 +3,13 @@
  * 서버 스펙: https://github.com/Beaneee/clipday-api
  */
 
-const RAW_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:8080";
+/**
+ * 기본값에 localhost 대신 127.0.0.1을 쓴다.
+ * 브라우저는 localhost를 IPv6(::1)로 먼저 해석하는데 Spring Boot는 IPv4로만
+ * 리슨해서, curl은 되지만 웹에서만 연결이 실패하는 일이 생긴다.
+ * (실기기·Android 에뮬레이터에서는 .env에 개발 PC의 LAN IP를 넣어야 한다.)
+ */
+const RAW_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://127.0.0.1:8080";
 
 /** 끝의 슬래시를 제거한 API 베이스 URL. */
 export const API_BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
