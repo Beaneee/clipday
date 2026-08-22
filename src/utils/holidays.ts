@@ -10,9 +10,21 @@ import Holidays from "date-holidays";
  *        - 키가 없거나 네트워크 실패 시 오프라인으로도 동작하게.
  */
 
-const API_KEY = process.env.EXPO_PUBLIC_KDATA_SERVICE_KEY;
 const API_BASE =
   "https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getRestDeInfo";
+
+/**
+ * .env.example을 그대로 복사하면 "your_..._here" 같은 안내 문구가 값으로 들어온다.
+ * 이걸 실제 키로 오인하면 매번 실패하는 요청을 보내게 되므로 미설정으로 취급한다.
+ */
+function readApiKey(): string | null {
+  const raw = process.env.EXPO_PUBLIC_KDATA_SERVICE_KEY?.trim();
+  if (!raw) return null;
+  const looksLikePlaceholder = /^your[_-]/i.test(raw) || /[_-]here$/i.test(raw);
+  return looksLikePlaceholder ? null : raw;
+}
+
+const API_KEY = readApiKey();
 
 export const hasHolidayApiKey = !!API_KEY;
 

@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useClipStore } from "@/store/clip.store";
+import { useDeleteTabRecords } from "@/hooks/useRecords";
 import { useTabStore } from "@/store/tab.store";
 import type { Tab } from "@/types/tab";
 
@@ -20,7 +20,7 @@ export function TabBar() {
   const addTab = useTabStore((s) => s.addTab);
   const renameTab = useTabStore((s) => s.renameTab);
   const removeTab = useTabStore((s) => s.removeTab);
-  const clearTab = useClipStore((s) => s.clearTab);
+  const deleteTabRecords = useDeleteTabRecords();
 
   // 이름 입력 모달: 새 탭 생성 또는 기존 탭 이름 변경
   const [nameModal, setNameModal] = useState<
@@ -59,8 +59,14 @@ export function TabBar() {
 
   const doDelete = () => {
     if (!pendingDelete) return;
-    removeTab(pendingDelete.id);
-    clearTab(pendingDelete.id);
+    const { id } = pendingDelete;
+    removeTab(id);
+    // 서버에 남은 해당 탭 기록도 함께 정리한다. 실패해도 탭 삭제 자체는 되돌리지 않는다.
+    deleteTabRecords.mutate(id, {
+      onError: (e) => {
+        if (__DEV__) console.warn("[tabs] 서버 기록 삭제 실패:", e);
+      },
+    });
     setPendingDelete(null);
     if (tabs.length <= 2) setEditing(false); // 삭제 후 1개만 남으면 편집 종료
   };

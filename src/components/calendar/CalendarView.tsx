@@ -2,9 +2,11 @@ import { Image } from "expo-image";
 import { memo, useEffect } from "react";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Calendar, LocaleConfig, type DateData } from "react-native-calendars";
-import { useClipStore } from "@/store/clip.store";
+import { toAbsoluteImageUrl } from "@/api/client";
+import { useRecordsByDate } from "@/hooks/useRecords";
 import { useHolidayStore } from "@/store/holiday.store";
 import { useTabStore } from "@/store/tab.store";
+import type { DailyRecord } from "@/types/record";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CELL_SIZE = SCREEN_WIDTH / 7;
@@ -33,19 +35,17 @@ type Props = {
 type DayProps = {
   date?: DateData;
   state?: string;
+  record?: DailyRecord;
   onDayPress: (dateKey: string) => void;
 };
 
-const DayCell = memo(function DayCell({ date, state, onDayPress }: DayProps) {
+const DayCell = memo(function DayCell({ date, state, record, onDayPress }: DayProps) {
   const key = date?.dateString;
   const year = key ? Number(key.slice(0, 4)) : undefined;
-  const activeTabId = useTabStore((s) => s.activeTabId);
-  const clip = useClipStore((s) =>
-    key ? s.clips[activeTabId]?.[key]?.[0] : undefined
-  );
   const holidayName = useHolidayStore((s) =>
     key && year ? s.byYear[year]?.[key] : undefined
   );
+  const photoUrl = toAbsoluteImageUrl(record?.imageUrl);
 
   if (!key || !date) return <View style={styles.cell} />;
 
@@ -60,23 +60,23 @@ const DayCell = memo(function DayCell({ date, state, onDayPress }: DayProps) {
       onPress={() => onDayPress(key)}
     >
       {/* 사진 배경 */}
-      {clip && (
+      {photoUrl && (
         <Image
-          source={{ uri: clip.photoUri }}
+          source={{ uri: photoUrl }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
         />
       )}
-      {clip && <View style={styles.overlay} />}
+      {photoUrl && <View style={styles.overlay} />}
 
       {/* 날짜 숫자 */}
       <View style={[styles.dayBadge, isToday && styles.todayBadge]}>
         <Text
           style={[
             styles.dayText,
-            isRed && !clip && styles.redText,
-            isBlue && !clip && styles.blueText,
-            clip && styles.dayTextOnPhoto,
+            isRed && !photoUrl && styles.redText,
+            isBlue && !photoUrl && styles.blueText,
+            photoUrl && styles.dayTextOnPhoto,
             isToday && styles.todayText,
           ]}
         >
@@ -85,9 +85,9 @@ const DayCell = memo(function DayCell({ date, state, onDayPress }: DayProps) {
       </View>
 
       {/* 하단: 메모 미리보기(우선) 또는 공휴일명 */}
-      {clip?.memo ? (
-        <Text style={styles.memoPreview} numberOfLines={1}>
-          {clip.memo}
+      {record?.memo ? (
+        <Text style={[styles.memoPreview, !photoUrl && styles.memoPreviewNoPhoto]} numberOfLines={1}>
+          {record.memo}
         </Text>
       ) : holidayName ? (
         <Text style={styles.holidayLabel} numberOfLines={1}>
@@ -100,6 +100,8 @@ const DayCell = memo(function DayCell({ date, state, onDayPress }: DayProps) {
 
 export function CalendarView({ onDayPress }: Props) {
   const ensureYear = useHolidayStore((s) => s.ensureYear);
+  const activeTabId = useTabStore((s) => s.activeTabId);
+  const { byDate } = useRecordsByDate(activeTabId);
 
   // 처음 보이는 달의 연도 로드
   useEffect(() => {
@@ -114,7 +116,12 @@ export function CalendarView({ onDayPress }: Props) {
       enableSwipeMonths
       onMonthChange={(m) => ensureYear(m.year)}
       dayComponent={({ date, state }) => (
-        <DayCell date={date} state={state} onDayPress={onDayPress} />
+        <DayCell
+          date={date}
+          state={state}
+          record={date ? byDate[date.dateString] : undefined}
+          onDayPress={onDayPress}
+        />
       )}
       theme={{
         calendarBackground: "#fff",
@@ -178,6 +185,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "500",
   },
+  memoPreviewNoPhoto: { color: "#666" },
   holidayLabel: {
     position: "absolute",
     bottom: 4,
