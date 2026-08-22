@@ -1,3 +1,4 @@
+import { File } from "expo-file-system";
 import { Platform } from "react-native";
 import { apiRequest } from "./client";
 
@@ -140,17 +141,27 @@ export async function uploadImage(
     const mimeType = blob.type || meta.mimeType || guessMimeType(localUri);
     formData.append("file", blob, meta.fileName ?? guessFileName(localUri, mimeType));
   } else {
-    // 서버는 image/* 만 받으므로, picker가 알려준 값이 이미지가 아니면
-    // (또는 없으면) 확장자로 추론한 값을 쓴다.
-    const reported = meta.mimeType?.trim();
-    const mimeType =
-      reported && reported.startsWith("image/") ? reported : guessMimeType(localUri);
+    // Expo SDK 56의 fetch(WinterCG 구현)는 RN 레거시 방식인
+    // { uri, name, type } 객체를 받지 않는다 — "Unsupported FormDataPart
+    // implementation"으로 실패한다. string · Blob · bytes()를 가진 객체만
+    // 받으므로, 파일을 File로 열어 넘긴다.
+    const file = new File(localUri);
 
-    formData.append("file", {
-      uri: localUri,
-      name: meta.fileName ?? guessFileName(localUri, mimeType),
-      type: mimeType,
-    } as unknown as Blob);
+    // 서버는 image/* 만 받는다. File이 MIME을 못 읽으면(빈 문자열) picker가
+    // 알려준 값이나 확장자로 추론한 값을 붙여 Blob으로 감싼다.
+    if (file.type?.startsWith("image/")) {
+      formData.append("file", file as unknown as Blob);
+    } else {
+      const reported = meta.mimeType?.trim();
+      const mimeType =
+        reported && reported.startsWith("image/") ? reported : guessMimeType(localUri);
+      const bytes = await file.bytes();
+      formData.append(
+        "file",
+        new Blob([bytes], { type: mimeType }),
+        meta.fileName ?? guessFileName(localUri, mimeType)
+      );
+    }
   }
 
   const res = await apiRequest<UploadResponse>("/api/images", {
