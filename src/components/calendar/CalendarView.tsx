@@ -6,11 +6,12 @@ import { toAbsoluteImageUrl } from "@/api/client";
 import { useRecordsByDate } from "@/hooks/useRecords";
 import { useHolidayStore } from "@/store/holiday.store";
 import { useTabStore } from "@/store/tab.store";
+import { colors, radius, space, type } from "@/theme/tokens";
 import type { DailyRecord } from "@/types/record";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CELL_SIZE = SCREEN_WIDTH / 7;
-const CELL_HEIGHT = CELL_SIZE * 1.3;
+const CELL_HEIGHT = CELL_SIZE * 1.18;
 
 // 한국어 로케일
 LocaleConfig.locales.ko = {
@@ -63,7 +64,7 @@ const DayCell = memo(function DayCell({ date, state, record, onDayPress }: DayPr
       {photoUrl && (
         <Image
           source={{ uri: photoUrl }}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, styles.photo]}
           contentFit="cover"
         />
       )}
@@ -124,16 +125,16 @@ export function CalendarView({ onDayPress }: Props) {
         />
       )}
       theme={{
-        calendarBackground: "#fff",
-        textSectionTitleColor: "#aaa",
-        textDayHeaderFontSize: 11,
-        arrowColor: "#333",
-        monthTextColor: "#111",
-        textMonthFontSize: 18,
-        textMonthFontWeight: "600",
+        calendarBackground: colors.bgPrimary,
+        textSectionTitleColor: colors.textTertiary,
+        textDayHeaderFontSize: type.captionS.fontSize,
+        arrowColor: colors.textSecondary,
+        monthTextColor: colors.textPrimary,
+        textMonthFontSize: type.h4.fontSize,
+        textMonthFontWeight: "700",
         // @ts-expect-error - 내부 스타일시트 오버라이드
         "stylesheet.calendar.main": {
-          container: { padding: 0, backgroundColor: "#fff" },
+          container: { padding: 0, backgroundColor: colors.bgPrimary },
           week: { marginVertical: 0, flexDirection: "row", justifyContent: "space-around" },
         },
       }}
@@ -142,57 +143,70 @@ export function CalendarView({ onDayPress }: Props) {
 }
 
 const styles = StyleSheet.create({
+  // 격자선을 긋지 않는다 — 평면 캔버스 위에 사진 카드만 얹는다
   cell: {
     width: CELL_SIZE,
     height: CELL_HEIGHT,
-    overflow: "hidden",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e8e8e8",
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: "#e8e8e8",
     justifyContent: "flex-start",
     alignItems: "flex-start",
-    padding: 5,
+    padding: space.s1 - 1,
   },
-  pressed: { opacity: 0.85 },
+  // 눌림은 그림자가 아니라 오버레이로 표현한다
+  pressed: { opacity: 0.92 },
 
+  photo: {
+    margin: space.s1 - 1,
+    borderRadius: radius.m,
+  },
+  // 사진 위 글자가 읽히도록 얹는 최소한의 톤
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0,0,0,0.18)",
+    margin: space.s1 - 1,
+    borderRadius: radius.m,
+    backgroundColor: "rgba(1, 10, 37, 0.28)",
   },
 
   dayBadge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
+    minWidth: 24,
+    height: 24,
+    borderRadius: radius.full,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 3,
+    paddingHorizontal: space.s1,
+    marginLeft: space.s1 - 2,
+    marginTop: space.s1 - 2,
   },
-  todayBadge: { backgroundColor: "#111" },
-  dayText: { fontSize: 12, color: "#222", fontWeight: "500" },
-  redText: { color: "#e74c3c" },
-  blueText: { color: "#3b6fd4" },
-  dayTextOnPhoto: { color: "#fff", fontWeight: "600" },
-  todayText: { color: "#fff", fontWeight: "700" },
+  todayBadge: { backgroundColor: colors.fillPrimary },
+  dayText: {
+    fontSize: type.caption.fontSize,
+    lineHeight: type.caption.lineHeight,
+    letterSpacing: type.caption.letterSpacing,
+    fontWeight: "500",
+    color: colors.textSecondary,
+  },
+  redText: { color: colors.textDanger },
+  blueText: { color: colors.textBrand },
+  dayTextOnPhoto: { color: colors.textAlt, fontWeight: "700" },
+  todayText: { color: colors.textAlt, fontWeight: "700" },
 
   memoPreview: {
     position: "absolute",
-    bottom: 4,
-    left: 4,
-    right: 4,
-    fontSize: 9,
-    color: "#fff",
-    fontWeight: "500",
+    bottom: space.s1 + 2,
+    left: space.s1 + 2,
+    right: space.s1 + 2,
+    fontSize: type.captionS.fontSize - 1,
+    lineHeight: type.captionS.lineHeight,
+    color: colors.textAlt,
+    fontWeight: "600",
   },
-  memoPreviewNoPhoto: { color: "#666" },
+  memoPreviewNoPhoto: { color: colors.textTertiary, fontWeight: "500" },
   holidayLabel: {
-    position: "absolute",
-    bottom: 4,
-    left: 4,
-    right: 4,
-    fontSize: 9,
-    color: "#e74c3c",
+    marginLeft: space.s1 - 2,
+    marginTop: space.s1 / 2,
+    maxWidth: CELL_SIZE - space.s2,
+    fontSize: type.captionS.fontSize - 1,
+    lineHeight: type.captionS.lineHeight,
+    color: colors.textDanger,
     fontWeight: "500",
   },
 });

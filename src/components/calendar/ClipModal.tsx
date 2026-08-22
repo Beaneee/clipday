@@ -22,6 +22,7 @@ import {
   type PhotoSelection,
 } from "@/hooks/useRecords";
 import { useTabStore } from "@/store/tab.store";
+import { colors, noWebOutline, radius, size, space, type } from "@/theme/tokens";
 
 type Props = {
   dateKey: string | null;
@@ -44,6 +45,7 @@ export function ClipModal({ dateKey, onClose }: Props) {
   const [photo, setPhoto] = useState<PhotoSelection>(null);
   const [memo, setMemo] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [memoFocused, setMemoFocused] = useState(false);
 
   const busy = saveMutation.isPending || deleteMutation.isPending;
   const displayUri =
@@ -101,6 +103,7 @@ export function ClipModal({ dateKey, onClose }: Props) {
   // 모달이 열릴 때 서버에 있는 기존 기록을 입력값으로 채운다.
   const onShow = useCallback(() => {
     setError(null);
+    setMemoFocused(false);
     if (existing) {
       setPhoto(existing.imageUrl ? { kind: "server", imageUrl: existing.imageUrl } : null);
       setMemo(existing.memo ?? "");
@@ -140,11 +143,11 @@ export function ClipModal({ dateKey, onClose }: Props) {
                 style={styles.deleteBtn}
                 disabled={busy}
               >
-                <Ionicons name="trash-outline" size={20} color={busy ? "#f0b8b2" : "#e74c3c"} />
+                <Ionicons name="trash-outline" size={20} color={busy ? colors.textDisabled : colors.textDanger} />
               </Pressable>
             )}
             <Pressable onPress={onClose} hitSlop={12} disabled={busy}>
-              <Ionicons name="close" size={24} color="#111" />
+              <Ionicons name="close" size={24} color={colors.textPrimary} />
             </Pressable>
           </View>
         </View>
@@ -160,13 +163,13 @@ export function ClipModal({ dateKey, onClose }: Props) {
               <>
                 <Image source={{ uri: displayUri }} style={styles.preview} contentFit="cover" />
                 <View style={styles.changeOverlay}>
-                  <Ionicons name="camera-outline" size={22} color="#fff" />
+                  <Ionicons name="camera-outline" size={20} color={colors.textAlt} />
                   <Text style={styles.changeText}>사진 변경</Text>
                 </View>
               </>
             ) : (
               <View style={styles.placeholder}>
-                <Ionicons name="image-outline" size={48} color="#ccc" />
+                <Ionicons name="image-outline" size={32} color={colors.textDisabled} />
                 <Text style={styles.placeholderText}>사진을 추가해주세요</Text>
               </View>
             )}
@@ -174,9 +177,11 @@ export function ClipModal({ dateKey, onClose }: Props) {
 
           {/* 메모 */}
           <TextInput
-            style={styles.memoInput}
+            style={[styles.memoInput, noWebOutline, memoFocused && styles.memoInputFocused]}
+            onFocus={() => setMemoFocused(true)}
+            onBlur={() => setMemoFocused(false)}
             placeholder="오늘 하루를 기록해보세요..."
-            placeholderTextColor="#bbb"
+            placeholderTextColor={colors.textPlaceholder}
             multiline
             value={memo}
             onChangeText={setMemo}
@@ -186,19 +191,23 @@ export function ClipModal({ dateKey, onClose }: Props) {
           {/* 에러 안내 */}
           {error && (
             <View style={styles.errorBox}>
-              <Ionicons name="alert-circle-outline" size={16} color="#e74c3c" />
+              <Ionicons name="alert-circle-outline" size={16} color={colors.textDanger} />
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
 
           {/* 저장 버튼 */}
           <Pressable
-            style={[styles.saveButton, (!photo || busy) && styles.saveButtonDisabled]}
+            style={({ pressed }) => [
+              styles.saveButton,
+              pressed && styles.saveButtonPressed,
+              (!photo || busy) && styles.saveButtonDisabled,
+            ]}
             onPress={handleSave}
             disabled={!photo || busy}
           >
             {saveMutation.isPending ? (
-              <ActivityIndicator color="#fff" size="small" />
+              <ActivityIndicator color={colors.textAlt} size="small" />
             ) : (
               <Text style={styles.saveButtonText}>{existing ? "수정 완료" : "저장"}</Text>
             )}
@@ -210,85 +219,122 @@ export function ClipModal({ dateKey, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: "#fff" },
+  flex: { flex: 1, backgroundColor: colors.bgPrimary },
   handleBar: {
     width: 36,
     height: 4,
-    borderRadius: 2,
-    backgroundColor: "#ddd",
+    borderRadius: radius.full,
+    backgroundColor: colors.lineDefault,
     alignSelf: "center",
-    marginTop: 12,
+    marginTop: space.s3,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
+    height: size.topAppBar,
+    paddingHorizontal: space.s6,
   },
-  dateText: { fontSize: 17, fontWeight: "600", color: "#111" },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
-  deleteBtn: { padding: 2 },
+  dateText: {
+    fontSize: type.h4.fontSize,
+    lineHeight: type.h4.lineHeight,
+    letterSpacing: type.h4.letterSpacing,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: space.s5 },
+  deleteBtn: { padding: space.s1 / 2 },
 
-  body: { padding: 20, paddingBottom: 48 },
+  body: { padding: space.s6, paddingBottom: space.s12 },
 
   photoPicker: {
     width: "100%",
     height: 260,
-    borderRadius: 14,
+    borderRadius: radius.xl,
     overflow: "hidden",
-    backgroundColor: "#f5f5f5",
-    marginBottom: 16,
+    backgroundColor: colors.fillSecondary,
+    marginBottom: space.s4,
   },
   preview: { width: "100%", height: "100%" },
   changeOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: "rgba(1, 10, 37, 0.36)",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: space.s1 + 2,
   },
-  changeText: { color: "#fff", fontSize: 13, fontWeight: "500" },
+  changeText: {
+    color: colors.textAlt,
+    fontSize: type.labelS.fontSize,
+    lineHeight: type.labelS.lineHeight,
+    fontWeight: "600",
+  },
   placeholder: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: space.s2,
   },
-  placeholderText: { color: "#bbb", fontSize: 14 },
+  placeholderText: {
+    color: colors.textTertiary,
+    fontSize: type.body2.fontSize,
+    lineHeight: type.body2.lineHeight,
+    letterSpacing: type.body2.letterSpacing,
+  },
 
+  // text-field: resting은 grey-100 채움 + 헤어라인, focus는 흰 배경 + 브랜드 보더
   memoInput: {
     borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 15,
-    minHeight: 110,
+    borderColor: colors.lineDefault,
+    backgroundColor: colors.fillSecondary,
+    borderRadius: radius.m,
+    padding: space.s4,
+    fontSize: type.body2.fontSize,
+    lineHeight: type.body2.lineHeight,
+    letterSpacing: type.body2.letterSpacing,
+    minHeight: 112,
     textAlignVertical: "top",
-    marginBottom: 20,
-    color: "#111",
-    lineHeight: 22,
+    marginBottom: space.s5,
+    color: colors.textPrimary,
+  },
+  memoInputFocused: {
+    backgroundColor: colors.bgPrimary,
+    borderColor: colors.lineBrand,
+    borderWidth: 1.5,
   },
 
   errorBox: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#fdecea",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
+    alignItems: "flex-start",
+    gap: space.s2,
+    backgroundColor: colors.fillSecondary,
+    borderRadius: radius.m,
+    padding: space.s4,
+    marginBottom: space.s4,
   },
-  errorText: { color: "#c0392b", fontSize: 13, flex: 1 },
+  errorText: {
+    color: colors.textDanger,
+    fontSize: type.body3.fontSize,
+    lineHeight: type.body3.lineHeight,
+    flex: 1,
+  },
 
+  // XL 버튼: 56 높이 + radius 16 + label-l
   saveButton: {
-    backgroundColor: "#111",
-    borderRadius: 12,
-    padding: 16,
+    height: size.buttonXL,
+    backgroundColor: colors.fillBrand,
+    borderRadius: radius.xl,
     alignItems: "center",
+    justifyContent: "center",
   },
-  saveButtonDisabled: { backgroundColor: "#ddd" },
-  saveButtonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  saveButtonPressed: { backgroundColor: colors.fillBrandPressed },
+  // disabled는 부분 회색이 아니라 노드 전체 불투명도로 처리한다
+  saveButtonDisabled: { opacity: colors.disabledOpacity },
+  saveButtonText: {
+    color: colors.textAlt,
+    fontSize: type.labelL.fontSize,
+    lineHeight: type.labelL.lineHeight,
+    letterSpacing: type.labelL.letterSpacing,
+    fontWeight: "700",
+  },
 });

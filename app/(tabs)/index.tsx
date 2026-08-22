@@ -7,6 +7,7 @@ import { ClipModal } from "@/components/calendar/ClipModal";
 import { TabBar } from "@/components/calendar/TabBar";
 import { useRecords } from "@/hooks/useRecords";
 import { useTabStore } from "@/store/tab.store";
+import { colors, radius, space, type } from "@/theme/tokens";
 
 export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -25,7 +26,7 @@ export default function HomeScreen() {
       {/* 서버 연결 실패 안내 — 캘린더는 그대로 보여주고 위에 배너만 띄운다. */}
       {isError && (
         <View style={styles.errorBanner}>
-          <Ionicons name="cloud-offline-outline" size={16} color="#c0392b" />
+          <Ionicons name="cloud-offline-outline" size={16} color={colors.textDanger} />
           <Text style={styles.errorText} numberOfLines={2}>
             {error instanceof Error ? error.message : "기록을 불러오지 못했습니다."}
           </Text>
@@ -41,7 +42,7 @@ export default function HomeScreen() {
 
       {isLoading && (
         <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="small" color="#111" />
+          <ActivityIndicator size="small" color={colors.textTertiary} />
         </View>
       )}
 
@@ -51,24 +52,35 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: colors.bgPrimary },
 
+  // 사용자를 멈춰 세우지 않는 안내 — 캘린더는 그대로 두고 위에 얹는다
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "#fdecea",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: space.s2,
+    backgroundColor: colors.fillSecondary,
+    paddingHorizontal: space.s6,
+    paddingVertical: space.s3,
   },
-  errorText: { flex: 1, color: "#c0392b", fontSize: 12 },
+  errorText: {
+    flex: 1,
+    color: colors.textDanger,
+    fontSize: type.body3.fontSize,
+    lineHeight: type.body3.lineHeight,
+  },
+  // ghost 버튼에 가까운 약한 위계 — 강조색은 저장 CTA에 예약해 둔다
   retryBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: "#c0392b",
+    paddingHorizontal: space.s3,
+    paddingVertical: space.s1 + 2,
+    borderRadius: radius.s,
   },
-  retryText: { color: "#fff", fontSize: 12, fontWeight: "600" },
+  retryText: {
+    color: colors.textBrand,
+    fontSize: type.labelS.fontSize,
+    letterSpacing: type.labelS.letterSpacing,
+    fontWeight: "600",
+  },
 
   loadingOverlay: {
     position: "absolute",

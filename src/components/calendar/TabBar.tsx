@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useDeleteTabRecords } from "@/hooks/useRecords";
 import { useTabStore } from "@/store/tab.store";
+import { colors, noWebOutline, radius, size, space, type } from "@/theme/tokens";
 import type { Tab } from "@/types/tab";
 
 export function TabBar() {
@@ -104,7 +105,7 @@ export function TabBar() {
                       <Ionicons
                         name="close-circle"
                         size={16}
-                        color={active ? "#fff" : "#e74c3c"}
+                        color={active ? colors.textAlt : colors.textDanger}
                       />
                     </Pressable>
                   )}
@@ -114,7 +115,7 @@ export function TabBar() {
           })}
 
           <Pressable style={styles.addBtn} onPress={openCreate} hitSlop={8}>
-            <Ionicons name="add" size={20} color="#111" />
+            <Ionicons name="add" size={20} color={colors.textSecondary} />
           </Pressable>
         </ScrollView>
 
@@ -127,7 +128,7 @@ export function TabBar() {
             <Ionicons
               name={editing ? "checkmark" : "create-outline"}
               size={20}
-              color={editing ? "#111" : "#888"}
+              color={editing ? colors.textPrimary : colors.textTertiary}
             />
           </Pressable>
         )}
@@ -146,9 +147,9 @@ export function TabBar() {
               {nameModal?.mode === "rename" ? "탭 이름 변경" : "새 탭"}
             </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, noWebOutline]}
               placeholder="테마 이름 (예: 여행, 운동)"
-              placeholderTextColor="#bbb"
+              placeholderTextColor={colors.textPlaceholder}
               value={name}
               onChangeText={setName}
               autoFocus
@@ -222,91 +223,127 @@ export function TabBar() {
 const styles = StyleSheet.create({
   wrap: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.lineDefault,
   },
   bar: { flexDirection: "row", alignItems: "center" },
   scroll: { flexShrink: 1 },
   row: {
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
+    paddingHorizontal: space.s6,
+    paddingVertical: space.s3,
+    gap: space.s2,
   },
   editBtn: {
-    width: 48,
+    width: size.minTouch,
     alignSelf: "stretch",
     alignItems: "center",
     justifyContent: "center",
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: "#eee",
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 18,
-    backgroundColor: "#f2f2f2",
-  },
-  chipActive: { backgroundColor: "#111" },
-  chipInner: { flexDirection: "row", alignItems: "center", gap: 6 },
-  chipText: { fontSize: 14, color: "#888", fontWeight: "500" },
-  chipTextActive: { color: "#fff", fontWeight: "600" },
-  chipClose: {
-    marginRight: -2, // 오른쪽 여백 보정
+    borderLeftColor: colors.lineDefault,
   },
 
+  // chip: 34px full pill. resting은 흰 배경 + 헤어라인, active는 grey-900으로 뒤집힌다
+  chip: {
+    height: size.chip,
+    justifyContent: "center",
+    paddingHorizontal: space.s4,
+    borderRadius: radius.full,
+    backgroundColor: colors.bgPrimary,
+    borderWidth: 1,
+    borderColor: colors.lineDefault,
+  },
+  chipActive: {
+    backgroundColor: colors.fillPrimary,
+    borderColor: colors.fillPrimary,
+  },
+  chipInner: { flexDirection: "row", alignItems: "center", gap: space.s1 + 2 },
+  chipText: {
+    fontSize: type.labelS.fontSize,
+    lineHeight: type.labelS.lineHeight,
+    letterSpacing: type.labelS.letterSpacing,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
+  chipTextActive: { color: colors.textAlt, fontWeight: "600" },
+  chipClose: { marginRight: -2 },
+
   addBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: size.chip,
+    height: size.chip,
+    borderRadius: radius.full,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#ddd",
+    borderWidth: 1,
+    borderColor: colors.lineDefault,
   },
 
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: colors.overlayScrim,
     alignItems: "center",
     justifyContent: "center",
-    padding: 32,
+    padding: space.s8,
   },
+  // dialog: radius 20, 24 inner padding
   card: {
     width: "100%",
     maxWidth: 340,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: colors.bgElevated,
+    borderRadius: radius.xxl,
+    padding: space.s6,
   },
-  cardTitle: { fontSize: 17, fontWeight: "700", color: "#111", marginBottom: 14 },
+  cardTitle: {
+    fontSize: type.title1.fontSize,
+    lineHeight: type.title1.lineHeight,
+    letterSpacing: type.title1.letterSpacing,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    marginBottom: space.s4,
+  },
   cardBody: {
-    fontSize: 14,
-    color: "#555",
-    lineHeight: 20,
-    marginTop: -4,
-    marginBottom: 18,
+    fontSize: type.body2.fontSize,
+    lineHeight: type.body2.lineHeight,
+    letterSpacing: type.body2.letterSpacing,
+    color: colors.textSecondary,
+    marginTop: -space.s1,
+    marginBottom: space.s5,
   },
   input: {
+    height: size.textField,
     borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: "#111",
-    marginBottom: 16,
+    borderColor: colors.lineDefault,
+    backgroundColor: colors.fillSecondary,
+    borderRadius: radius.m,
+    paddingHorizontal: space.s4,
+    fontSize: type.body2.fontSize,
+    letterSpacing: type.body2.letterSpacing,
+    color: colors.textPrimary,
+    marginBottom: space.s4,
   },
-  cardActions: { flexDirection: "row", gap: 10 },
+
+  // dialog CTA: 48 높이 + radius 14
+  cardActions: { flexDirection: "row", gap: space.s2 },
   cardBtn: {
     flex: 1,
-    borderRadius: 12,
-    paddingVertical: 13,
+    height: size.buttonL,
+    borderRadius: radius.l,
     alignItems: "center",
+    justifyContent: "center",
   },
-  cancelBtn: { backgroundColor: "#f2f2f2" },
-  cancelText: { color: "#555", fontSize: 15, fontWeight: "600" },
-  createBtn: { backgroundColor: "#111" },
-  createBtnDisabled: { backgroundColor: "#ddd" },
-  createText: { color: "#fff", fontSize: 15, fontWeight: "600" },
-  deleteBtn: { backgroundColor: "#e74c3c" },
+  cancelBtn: { backgroundColor: colors.fillSecondary },
+  cancelText: {
+    color: colors.textSecondary,
+    fontSize: type.labelM.fontSize,
+    letterSpacing: type.labelM.letterSpacing,
+    fontWeight: "600",
+  },
+  createBtn: { backgroundColor: colors.fillBrand },
+  createBtnDisabled: { opacity: colors.disabledOpacity },
+  createText: {
+    color: colors.textAlt,
+    fontSize: type.labelM.fontSize,
+    letterSpacing: type.labelM.letterSpacing,
+    fontWeight: "600",
+  },
+  deleteBtn: { backgroundColor: colors.fillDanger },
 });
