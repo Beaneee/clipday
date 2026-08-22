@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useDeleteTabRecords } from "@/hooks/useRecords";
 import { useTabStore } from "@/store/tab.store";
-import { colors, noWebOutline, radius, size, space, type } from "@/theme/tokens";
+import { colors, font, noWebOutline, radius, size, space, type } from "@/theme/tokens";
 import type { Tab } from "@/types/tab";
 
 export function TabBar() {
@@ -262,9 +262,9 @@ const styles = StyleSheet.create({
     lineHeight: type.labelS.lineHeight,
     letterSpacing: type.labelS.letterSpacing,
     color: colors.textSecondary,
-    fontWeight: "600",
+    fontFamily: font.semibold,
   },
-  chipTextActive: { color: colors.textAlt, fontWeight: "600" },
+  chipTextActive: { color: colors.textAlt, fontFamily: font.semibold },
   chipClose: { marginRight: -2 },
 
   addBtn: {
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     fontSize: type.title1.fontSize,
     lineHeight: type.title1.lineHeight,
     letterSpacing: type.title1.letterSpacing,
-    fontWeight: "700",
+    fontFamily: font.bold,
     color: colors.textPrimary,
     marginBottom: space.s4,
   },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: type.labelM.fontSize,
     letterSpacing: type.labelM.letterSpacing,
-    fontWeight: "600",
+    fontFamily: font.semibold,
   },
   createBtn: { backgroundColor: colors.fillBrand },
   createBtnDisabled: { opacity: colors.disabledOpacity },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     color: colors.textAlt,
     fontSize: type.labelM.fontSize,
     letterSpacing: type.labelM.letterSpacing,
-    fontWeight: "600",
+    fontFamily: font.semibold,
   },
   deleteBtn: { backgroundColor: colors.fillDanger },
 });

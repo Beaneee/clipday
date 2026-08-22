@@ -7,7 +7,7 @@ import { ClipModal } from "@/components/calendar/ClipModal";
 import { TabBar } from "@/components/calendar/TabBar";
 import { useRecords } from "@/hooks/useRecords";
 import { useTabStore } from "@/store/tab.store";
-import { colors, radius, space, type } from "@/theme/tokens";
+import { colors, font, radius, space, type } from "@/theme/tokens";
 
 export default function HomeScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     color: colors.textBrand,
     fontSize: type.labelS.fontSize,
     letterSpacing: type.labelS.letterSpacing,
-    fontWeight: "600",
+    fontFamily: font.semibold,
   },
 
   loadingOverlay: {

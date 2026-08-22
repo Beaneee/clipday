@@ -22,7 +22,7 @@ import {
   type PhotoSelection,
 } from "@/hooks/useRecords";
 import { useTabStore } from "@/store/tab.store";
-import { colors, noWebOutline, radius, size, space, type } from "@/theme/tokens";
+import { colors, font, noWebOutline, radius, size, space, type } from "@/theme/tokens";
 
 type Props = {
   dateKey: string | null;
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     fontSize: type.h4.fontSize,
     lineHeight: type.h4.lineHeight,
     letterSpacing: type.h4.letterSpacing,
-    fontWeight: "700",
+    fontFamily: font.bold,
     color: colors.textPrimary,
   },
   headerActions: { flexDirection: "row", alignItems: "center", gap: space.s5 },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     color: colors.textAlt,
     fontSize: type.labelS.fontSize,
     lineHeight: type.labelS.lineHeight,
-    fontWeight: "600",
+    fontFamily: font.semibold,
   },
   placeholder: {
     flex: 1,
@@ -335,6 +335,6 @@ const styles = StyleSheet.create({
     fontSize: type.labelL.fontSize,
     lineHeight: type.labelL.lineHeight,
     letterSpacing: type.labelL.letterSpacing,
-    fontWeight: "700",
+    fontFamily: font.bold,
   },
 });

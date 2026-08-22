@@ -81,6 +81,17 @@ export const colors = {
   disabledOpacity: 0.3,
 } as const;
 
+/**
+ * 폰트 패밀리. 웨이트마다 파일이 따로라 각각 이름이 다르다.
+ * app/_layout.tsx의 useFonts 키와 반드시 같아야 한다.
+ */
+export const font = {
+  regular: "Pretendard-Regular",
+  medium: "Pretendard-Medium",
+  semibold: "Pretendard-SemiBold",
+  bold: "Pretendard-Bold",
+} as const;
+
 /** 4px 베이스 사다리. 화면 바깥 여백 24, 행 간격 16, 밀접 요소 8이 기본이다. */
 export const space = {
   s1: 4,
@@ -113,22 +124,24 @@ export const radius = {
 /**
  * 타입 램프. 문서의 line-height는 배수라서 px로 환산해 두었다
  * (React Native는 배수를 받지 않는다). tracking은 em을 px로 환산했다.
+ * 굵기는 fontWeight가 아니라 fontFamily로 지정한다 — 안드로이드는
+ * 커스텀 폰트에 fontWeight를 적용하지 못해 굵기가 무시되기 때문이다.
  */
 export const type = {
-  h1: { fontSize: 28, lineHeight: 36, letterSpacing: -0.56, fontWeight: "700" },
-  h2: { fontSize: 24, lineHeight: 31, letterSpacing: -0.48, fontWeight: "700" },
-  h3: { fontSize: 22, lineHeight: 29, letterSpacing: -0.33, fontWeight: "700" },
-  h4: { fontSize: 20, lineHeight: 27, letterSpacing: -0.3, fontWeight: "700" },
-  title1: { fontSize: 18, lineHeight: 26, letterSpacing: -0.18, fontWeight: "600" },
-  title2: { fontSize: 17, lineHeight: 25, letterSpacing: -0.17, fontWeight: "600" },
-  body1: { fontSize: 17, lineHeight: 26, letterSpacing: -0.085, fontWeight: "400" },
-  body2: { fontSize: 15, lineHeight: 23, letterSpacing: -0.075, fontWeight: "400" },
-  body3: { fontSize: 13, lineHeight: 20, letterSpacing: 0, fontWeight: "400" },
-  labelL: { fontSize: 17, lineHeight: 21, letterSpacing: -0.085, fontWeight: "700" },
-  labelM: { fontSize: 15, lineHeight: 19, letterSpacing: -0.075, fontWeight: "600" },
-  labelS: { fontSize: 13, lineHeight: 16, letterSpacing: 0, fontWeight: "600" },
-  caption: { fontSize: 12, lineHeight: 17, letterSpacing: 0, fontWeight: "500" },
-  captionS: { fontSize: 11, lineHeight: 15, letterSpacing: 0, fontWeight: "500" },
+  h1: { fontSize: 28, lineHeight: 36, letterSpacing: -0.56, fontFamily: font.bold },
+  h2: { fontSize: 24, lineHeight: 31, letterSpacing: -0.48, fontFamily: font.bold },
+  h3: { fontSize: 22, lineHeight: 29, letterSpacing: -0.33, fontFamily: font.bold },
+  h4: { fontSize: 20, lineHeight: 27, letterSpacing: -0.3, fontFamily: font.bold },
+  title1: { fontSize: 18, lineHeight: 26, letterSpacing: -0.18, fontFamily: font.semibold },
+  title2: { fontSize: 17, lineHeight: 25, letterSpacing: -0.17, fontFamily: font.semibold },
+  body1: { fontSize: 17, lineHeight: 26, letterSpacing: -0.085, fontFamily: font.regular },
+  body2: { fontSize: 15, lineHeight: 23, letterSpacing: -0.075, fontFamily: font.regular },
+  body3: { fontSize: 13, lineHeight: 20, letterSpacing: 0, fontFamily: font.regular },
+  labelL: { fontSize: 17, lineHeight: 21, letterSpacing: -0.085, fontFamily: font.bold },
+  labelM: { fontSize: 15, lineHeight: 19, letterSpacing: -0.075, fontFamily: font.semibold },
+  labelS: { fontSize: 13, lineHeight: 16, letterSpacing: 0, fontFamily: font.semibold },
+  caption: { fontSize: 12, lineHeight: 17, letterSpacing: 0, fontFamily: font.medium },
+  captionS: { fontSize: 11, lineHeight: 15, letterSpacing: 0, fontFamily: font.medium },
 } as const;
 
 /**

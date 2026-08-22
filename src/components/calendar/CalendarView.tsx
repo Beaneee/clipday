@@ -6,7 +6,7 @@ import { toAbsoluteImageUrl } from "@/api/client";
 import { useRecordsByDate } from "@/hooks/useRecords";
 import { useHolidayStore } from "@/store/holiday.store";
 import { useTabStore } from "@/store/tab.store";
-import { colors, radius, space, type } from "@/theme/tokens";
+import { colors, font, radius, space, type } from "@/theme/tokens";
 import type { DailyRecord } from "@/types/record";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -128,6 +128,9 @@ export function CalendarView({ onDayPress }: Props) {
         calendarBackground: colors.bgPrimary,
         textSectionTitleColor: colors.textTertiary,
         textDayHeaderFontSize: type.captionS.fontSize,
+        // 월 제목과 요일 헤더는 라이브러리가 그린다 — 폰트를 따로 넘겨야 한다
+        textDayHeaderFontFamily: font.medium,
+        textMonthFontFamily: font.bold,
         arrowColor: colors.textSecondary,
         monthTextColor: colors.textPrimary,
         textMonthFontSize: type.h4.fontSize,
@@ -181,13 +184,13 @@ const styles = StyleSheet.create({
     fontSize: type.caption.fontSize,
     lineHeight: type.caption.lineHeight,
     letterSpacing: type.caption.letterSpacing,
-    fontWeight: "500",
+    fontFamily: font.medium,
     color: colors.textSecondary,
   },
   redText: { color: colors.textDanger },
   blueText: { color: colors.textBrand },
-  dayTextOnPhoto: { color: colors.textAlt, fontWeight: "700" },
-  todayText: { color: colors.textAlt, fontWeight: "700" },
+  dayTextOnPhoto: { color: colors.textAlt, fontFamily: font.bold },
+  todayText: { color: colors.textAlt, fontFamily: font.bold },
 
   memoPreview: {
     position: "absolute",
@@ -197,9 +200,9 @@ const styles = StyleSheet.create({
     fontSize: type.captionS.fontSize - 1,
     lineHeight: type.captionS.lineHeight,
     color: colors.textAlt,
-    fontWeight: "600",
+    fontFamily: font.semibold,
   },
-  memoPreviewNoPhoto: { color: colors.textTertiary, fontWeight: "500" },
+  memoPreviewNoPhoto: { color: colors.textTertiary, fontFamily: font.medium },
   holidayLabel: {
     marginLeft: space.s1 - 2,
     marginTop: space.s1 / 2,
@@ -207,6 +210,6 @@ const styles = StyleSheet.create({
     fontSize: type.captionS.fontSize - 1,
     lineHeight: type.captionS.lineHeight,
     color: colors.textDanger,
-    fontWeight: "500",
+    fontFamily: font.medium,
   },
 });

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { colors, size, space, type } from "@/theme/tokens";
+import { colors, font, size, space, type } from "@/theme/tokens";
 
 export default function ExploreScreen() {
   return (
@@ -24,7 +24,7 @@ const styles = StyleSheet.create({
     fontSize: type.h3.fontSize,
     lineHeight: type.h3.lineHeight,
     letterSpacing: type.h3.letterSpacing,
-    fontWeight: "700",
+    fontFamily: font.bold,
     color: colors.textPrimary,
   },
 });
